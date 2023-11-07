@@ -1,0 +1,11 @@
+[package]
+name = "zboxfs_speedtest"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+zbox = { version = "0.9.2", features = ["storage-file", "libsodium-bundled", "test-perf"] }
+env_logger = "0.10.0"
+log = "0.4.0"
