@@ -1,0 +1,4 @@
+original
+Full time: 1.3705287
+Avg open: 3056
+ Avg write: 356284, Avg: finish: 2056167

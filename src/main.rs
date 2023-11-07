@@ -1,4 +1,4 @@
-use env_logger::{Builder, Target};
+use env_logger::Builder;
 use log::{self, info};
 use std::{
     fs,
@@ -14,6 +14,7 @@ fn file_open_and_write_bench(
     open: &mut [Duration],
     write: &mut [Duration],
     finish: &mut [Duration],
+    append: bool,
 ) {
     assert!(count == open.len());
     assert!(count == write.len());
@@ -40,60 +41,15 @@ fn file_open_and_write_bench(
         let end = start.elapsed();
         finish[i] = end;
 
-        file.set_len(0).unwrap();
+        if append == false {
+            file.set_len(0).unwrap();
+        }
         drop(file);
-        // repo.remove_file(file_path).unwrap();
-        info!("Iter {} end", i + 1);
+        if i % 50 == 0 {
+            info!("Iter {} end", i + 1);
+        }
     }
     repo.remove_file(file_path).unwrap();
-
-}
-
-fn main() {
-    // initialise zbox environment, called first
-    let mut logger = Builder::from_default_env();
-    logger.target(Target::Stdout);
-    logger.filter_level(log::LevelFilter::Info);
-    logger.init();
-
-    init_env();
-    // create and open a repository
-    let mut repo = RepoOpener::new()
-        .create(true)
-        .force(true)
-        .open("file://./my_repo", "1234")
-        .unwrap();
-
-    let count = 4000;
-    let mut open_time = vec![Duration::from_nanos(0); count];
-    let mut write_time = vec![Duration::from_nanos(0); count];
-    let mut finish_time = vec![Duration::from_nanos(0); count];
-
-    let start = Instant::now();
-    file_open_and_write_bench(
-        &mut repo,
-        &[62; 128],
-        count,
-        &mut open_time,
-        &mut write_time,
-        &mut finish_time,
-    );
-    let end = start.elapsed();
-    println!("All 2: {}", end.as_secs_f32());
-    let avg_open_time = open_time.iter().sum::<Duration>().as_nanos() / count as u128;
-    println!("Open time: {avg_open_time:?}");
-
-    let avg_write_time = write_time.iter().sum::<Duration>().as_nanos() / count as u128;
-    println!("Write time: {avg_write_time}");
-
-    let avg_finish_time = finish_time.iter().sum::<Duration>().as_nanos() / count as u128;
-    println!("Finish time: {avg_finish_time}");
-    println!();
-    fs::write("./open_times.txt", vec_duration_to_string(&open_time)).unwrap();
-    fs::write("./write_times.txt", vec_duration_to_string(&write_time)).unwrap();
-    fs::write("./finish_times.txt", vec_duration_to_string(&finish_time)).unwrap();
-
-    // std::fs::remove_dir_all("./my_repo").unwrap();
 }
 
 fn vec_duration_to_string(arr: &[Duration]) -> String {
@@ -101,4 +57,118 @@ fn vec_duration_to_string(arr: &[Duration]) -> String {
         .map(|el| format!("{}", el.as_nanos()))
         .collect::<Vec<_>>()
         .join(" ")
+}
+
+fn write_result(
+    file_id: usize,
+    open: &[Duration],
+    write: &[Duration],
+    finish: &[Duration],
+    all_time: Duration,
+    open_avg: u128,
+    write_avg: u128,
+    finish_avg: u128,
+    suffix: &str,
+) {
+    let all_time = all_time.as_secs_f32();
+
+    fs::write(
+        format!("./input/open_times_{}_{}.txt", suffix, file_id),
+        vec_duration_to_string(&open),
+    )
+    .unwrap();
+    fs::write(
+        format!("./input/write_times_{}_{}.txt", suffix, file_id),
+        vec_duration_to_string(&write),
+    )
+    .unwrap();
+    fs::write(
+        format!("./input/finish_times_{}_{}.txt", suffix, file_id),
+        vec_duration_to_string(&finish),
+    )
+    .unwrap();
+    fs::write(
+        format!("./input/meta_{}_{}.txt", suffix, file_id),
+        format!(
+            "original\nFull time: {}\nAvg open: {}\n Avg write: {}, Avg: finish: {}\n",
+            all_time, open_avg, write_avg, finish_avg
+        ),
+    )
+    .unwrap();
+}
+
+fn benchmark(count_inner: usize, append: bool, start_idx: usize, end_idx: usize) {
+    let mut open_time = vec![Duration::from_nanos(0); count_inner];
+    let mut write_time = vec![Duration::from_nanos(0); count_inner];
+    let mut finish_time = vec![Duration::from_nanos(0); count_inner];
+    for i in start_idx..end_idx {
+        let mut repo = RepoOpener::new()
+            .create(true)
+            .force(true)
+            .open("file://./my_repo", "1234")
+            .unwrap();
+
+        let start = Instant::now();
+        file_open_and_write_bench(
+            &mut repo,
+            &['<' as u8; 128],
+            count_inner,
+            &mut open_time,
+            &mut write_time,
+            &mut finish_time,
+            false,
+        );
+        let end = start.elapsed();
+
+        let open_avg = open_time.iter().sum::<Duration>().as_nanos() / count_inner as u128;
+        let write_avg = write_time.iter().sum::<Duration>().as_nanos() / count_inner as u128;
+        let finish_avg = finish_time.iter().sum::<Duration>().as_nanos() / count_inner as u128;
+
+        write_result(
+            i,
+            &open_time,
+            &write_time,
+            &finish_time,
+            end,
+            open_avg,
+            write_avg,
+            finish_avg,
+            if append { "append" } else { "write" },
+        );
+
+        fs::remove_dir_all("./my_repo").unwrap();
+    }
+}
+
+fn main() {
+    let mut logger = Builder::from_default_env();
+    // logger.target(Target::Stdout);
+    // logger.filter_level(log::LevelFilter::Info);
+    logger.init();
+
+    init_env();
+    let count_inner = 300; //1000;
+    let count_outer = 8;
+
+    match fs::remove_dir_all("./my_repo") {
+        Ok(_) => {}
+        Err(err) => match err.kind() {
+            std::io::ErrorKind::NotFound => {}
+            _ => panic!("{}", err),
+        },
+    };
+
+    match fs::create_dir("./input") {
+        Ok(_) => {}
+        Err(err) => match err.kind() {
+            std::io::ErrorKind::AlreadyExists => {}
+            _ => panic!("{}", err),
+        },
+    };
+
+    let step = 4;
+    for i in (0..count_outer).step_by(step) {
+        benchmark(count_inner, false, i, i + 4);
+        benchmark(count_inner, true, i, i + 4);
+    }
 }
