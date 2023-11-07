@@ -1,4 +1,4 @@
-use env_logger::Builder;
+use env_logger::{Builder, Target};
 use log::{self, info};
 use std::{
     fs,
@@ -90,7 +90,7 @@ fn write_result(
     fs::write(
         format!("./input/meta_{}_{}.txt", suffix, file_id),
         format!(
-            "original\nFull time: {}\nAvg open: {}\n Avg write: {}, Avg: finish: {}\n",
+            "original\nFull time: {}\nAvg open: {}\nAvg write: {}\nAvg finish: {}\n",
             all_time, open_avg, write_avg, finish_avg
         ),
     )
@@ -142,12 +142,12 @@ fn benchmark(count_inner: usize, append: bool, start_idx: usize, end_idx: usize)
 
 fn main() {
     let mut logger = Builder::from_default_env();
-    // logger.target(Target::Stdout);
-    // logger.filter_level(log::LevelFilter::Info);
+    logger.target(Target::Stdout);
+    logger.filter_level(log::LevelFilter::Info);
     logger.init();
 
     init_env();
-    let count_inner = 300; //1000;
+    let count_inner = 15000;
     let count_outer = 8;
 
     match fs::remove_dir_all("./my_repo") {
