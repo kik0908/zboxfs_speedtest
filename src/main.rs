@@ -91,7 +91,7 @@ fn write_result(
     fs::write(
         format!("./input/meta_{}_{}.txt", suffix, file_id),
         format!(
-            "original\nFull time: {}\nAvg open: {}\nAvg write: {}\nAvg finish: {}\nDir size(bytes): {dir_size}",
+            "original\nFull time: {}\nAvg open: {}\nAvg write: {}\nAvg finish: {}\nDir size(bytes): {dir_size}\n",
             all_time, open_avg, write_avg, finish_avg
         ),
     )
