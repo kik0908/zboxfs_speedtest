@@ -1,13 +1,15 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from numpy.lib.stride_tricks import sliding_window_view
 
 directory = "/linux/"  # os
-elements_count = 1000  # elements
+elements_count = 15000  # elements
 
 
 # SMA
 def moving_average(data, window_size):
-    return np.convolve(data, np.ones(window_size) / window_size, mode="same")
+    # return np.convolve(data, np.ones(window_size) / window_size, mode="same")
+    return np.average(sliding_window_view(data, window_shape=window_size), axis=1)
 
 
 # EMA
@@ -27,7 +29,7 @@ def work(names):
     num_files = len(names)
     fig, axes = plt.subplots(1, num_files, figsize=(15, 5))
     for i, name in enumerate(names):
-        with open(name + ".txt", "r", encoding="utf-8") as file:
+        with open("./input/" + name + ".txt", "r", encoding="utf-8") as file:
             data = list(map(int, file.read().split(" ")))
             data = np.array(data)
         print(name + " data len", len(data))
@@ -59,7 +61,7 @@ def work_combined(names):
     fig, ax = plt.subplots(figsize=(15, 5))
 
     for name in names:
-        with open(name + ".txt", "r", encoding="utf-8") as file:
+        with open("./input/" + name + ".txt", "r", encoding="utf-8") as file:
             data = list(map(int, file.read().split(" ")))
 
         data = np.array(data)
@@ -92,9 +94,31 @@ def work_combined(names):
 
 
 # List of file names to process
-writes = ["write_times_1", "write_times_2", "write_times_3", "write_times_4"]
-opens = ["open_times_1", "open_times_2", "open_times_3", "open_times_4"]
-finishes = ["finish_times_1", "finish_times_2", "finish_times_3", "finish_times_4"]
+writes = sorted(
+    [
+        "write_times_write_1",
+        "write_times_write_2",
+        "write_times_write_3",
+        "write_times_write_0",
+    ]
+)
+opens = sorted(
+    [
+        "open_times_write_1",
+        "open_times_write_2",
+        "open_times_write_3",
+        "open_times_write_0",
+    ]
+)
+finishes = sorted(
+    [
+        "finish_times_write_1",
+        "finish_times_write_2",
+        "finish_times_write_3",
+        "finish_times_write_0",
+    ]
+)
+
 work(writes)
 work(opens)
 work(finishes)
