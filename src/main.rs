@@ -45,7 +45,7 @@ fn file_open_and_write_bench(
             file.set_len(0).unwrap();
         }
         drop(file);
-        if i % 50 == 0 {
+        if i % 100 == 0 {
             info!("Iter {} end", i + 1);
         }
     }
@@ -68,6 +68,7 @@ fn write_result(
     open_avg: u128,
     write_avg: u128,
     finish_avg: u128,
+    dir_size: u64,
     suffix: &str,
 ) {
     let all_time = all_time.as_secs_f32();
@@ -90,7 +91,7 @@ fn write_result(
     fs::write(
         format!("./input/meta_{}_{}.txt", suffix, file_id),
         format!(
-            "original\nFull time: {}\nAvg open: {}\nAvg write: {}\nAvg finish: {}\n",
+            "original\nFull time: {}\nAvg open: {}\nAvg write: {}\nAvg finish: {}\nDir size(bytes): {dir_size}",
             all_time, open_avg, write_avg, finish_avg
         ),
     )
@@ -133,6 +134,7 @@ fn benchmark(count_inner: usize, append: bool, start_idx: usize, end_idx: usize)
             open_avg,
             write_avg,
             finish_avg,
+            fs_extra::dir::get_size("./my_repo").unwrap(),
             if append { "append" } else { "write" },
         );
 
@@ -147,7 +149,7 @@ fn main() {
     logger.init();
 
     init_env();
-    let count_inner = 15000;
+    let count_inner = 36499;
     let count_outer = 8;
 
     match fs::remove_dir_all("./my_repo") {
