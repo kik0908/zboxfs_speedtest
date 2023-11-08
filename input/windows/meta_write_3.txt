@@ -1,0 +1,6 @@
+original
+Full time: 583.4094
+Avg open: 3372
+Avg write: 928145
+Avg finish: 23318168
+Dir size(bytes): 646922941
