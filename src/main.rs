@@ -117,7 +117,7 @@ fn benchmark(count_inner: usize, append: bool, start_idx: usize, end_idx: usize)
             &mut open_time,
             &mut write_time,
             &mut finish_time,
-            false,
+            append,
         );
         let end = start.elapsed();
 
@@ -149,7 +149,7 @@ fn main() {
     logger.init();
 
     init_env();
-    let count_inner = 36499;
+    let count_inner = 36;//499;
     let count_outer = 8;
 
     match fs::remove_dir_all("./my_repo") {
